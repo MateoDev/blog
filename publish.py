@@ -1,10 +1,14 @@
 #!/usr/bin/python3
 import os, sys
 
-HEADER = """
-
+HEADER = """<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 
+<link rel="stylesheet" type="text/css" href="/css/main.css">
 <link rel="stylesheet" type="text/css" href="/css/common-vendor.b8ecfc406ac0b5f77a26.css">
 <link rel="stylesheet" type="text/css" href="/css/font-vendor.b86e2bf451b246b1a88e.css">
 <link rel="stylesheet" type="text/css" href="/css/fretboard.f32f2a8d5293869f0195.css">
@@ -32,19 +36,26 @@ HEADER = """
 
 .math { font-family: MJXc-TeX-math-Iw }
 </style>
+</head>
+<body>
 
 <div id="doc" class="container-fluid markdown-body comment-enabled" data-hard-breaks="true">
 
 """
 
-FOOTER = """ </div> """
+FOOTER = """ </div> </body></html>"""
 
 TOC_HEADER = """
 
-<br>
-<h1>{}</h1>
-<br>
-<br>
+<header>
+  <a href="/" class="site-title">MATT WRIGHT / MATTWRIGHT.ETH</a>
+  <nav>
+    <a href="/categories/web3.html">Web3</a>
+    <a href="/categories/ai.html">AI</a>
+    <a href="/categories/general.html">General</a>
+  </nav>
+</header>
+
 <ul class="post-list">
 
 """
@@ -54,18 +65,32 @@ TOC_FOOTER = """ </ul> """
 TOC_ITEM_TEMPLATE = """
 
 <li>
-    <span class="post-meta">{}</span>
-    <h3>
-      <a class="post-link" href="{}">{}</a>
-    </h3>
+  <a href="{}" style="text-decoration: none;">
+    <div class="post-card">
+      <div class="post-meta">
+        <span class="post-cat">{}</span>
+        <span class="post-date">{}</span>
+      </div>
+      <div class="post-divider"></div>
+      <h2 class="post-title">{}</h2>
+      <div class="post-footer">
+        <span class="post-readtime">~{} min read</span>
+        <span class="post-arrow">→</span>
+      </div>
+    </div>
+  </a>
 </li>
 
 """
 
 TWITTER_CARD_TEMPLATE = """
+<title>{}</title>
 <meta name="twitter:card" content="summary" />
 <meta name="twitter:title" content="{}" />
 <meta name="twitter:image" content="{}" />
+<meta property="og:title" content="{}" />
+<meta property="og:type" content="website" />
+<meta property="og:image" content="{}" />
 """
 
 def extract_metadata(fil, filename=None):
@@ -90,7 +115,9 @@ def metadata_to_path(metadata):
 
 
 def make_twitter_card(metadata, global_config):
-    return TWITTER_CARD_TEMPLATE.format(metadata['title'], global_config['icon'])
+    title = metadata.get('title', global_config.get('title', 'Matt Wright'))
+    icon = global_config.get('icon', '/images/icon.png')
+    return TWITTER_CARD_TEMPLATE.format(title, title, icon, title, icon)
 
 
 def defancify(text):
@@ -105,7 +132,11 @@ def make_toc_item(metadata):
     year, month, day = metadata['date'].split('/')
     month = 'JanFebMarAprMayJunJulAugSepOctNovDec'[int(month)*3-3:][:3]
     link = os.path.join('/', metadata_to_path(metadata))
-    return TOC_ITEM_TEMPLATE.format(year+' '+month+' '+day, link, metadata['title'])
+    category = metadata.get('category', 'GENERAL').upper()
+    # Estimate reading time (default to 5 min if not specified)
+    readtime = metadata.get('readtime', '5')
+    date_str = year + ' ' + month + ' ' + day
+    return TOC_ITEM_TEMPLATE.format(link, category, date_str, metadata['title'], readtime)
 
 if __name__ == '__main__':
     # Get blog config
